@@ -1,0 +1,23 @@
+{
+  "name": "@wacht/bench",
+  "version": "0.1.0",
+  "description": "CLI for Wacht Bench, the AI development workbench for Wacht.",
+  "type": "module",
+  "bin": {
+    "wacht-bench": "./bin/wacht-bench.js"
+  },
+  "files": [
+    "bin"
+  ],
+  "keywords": [
+    "wacht",
+    "bench",
+    "ai",
+    "skills",
+    "mcp"
+  ],
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

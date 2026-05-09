@@ -1,0 +1,14 @@
+{
+  "name": "@wacht/bench-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Workspace for Wacht skills, prompts, and the Bench CLI.",
+  "type": "module",
+  "scripts": {
+    "validate:skills": "node scripts/validate-skills.mjs",
+    "bench": "node packages/bench-cli/bin/wacht-bench.js"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}

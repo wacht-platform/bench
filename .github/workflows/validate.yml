@@ -1,0 +1,26 @@
+name: Validate Wacht Skills
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: bench
+      - uses: actions/checkout@v4
+        with:
+          repository: wacht-platform/documentation
+          path: wacht-docs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/validate-skills.mjs
+        working-directory: bench
+      - run: node packages/bench-cli/bin/wacht-bench.js mcp config --client cursor | jq -e '.mcpServers["wacht-docs"].url == "https://wacht.dev/docs/mcp"'
+        working-directory: bench
