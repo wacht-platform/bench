@@ -1,11 +1,11 @@
 ---
 name: wacht-skill-authoring
-description: Use when creating, editing, reviewing, validating, or publishing Wacht skills for the wacht/skills package or a project-specific skill pack.
+description: Use when creating, editing, reviewing, validating, or publishing Wacht skills for the wacht-platform/bench package or a project-specific skill pack.
 ---
 
 # Wacht Skill Authoring
 
-Use this skill when the user asks to create or improve a Wacht skill, add a new skill to `wacht/skills`, or make project-specific Wacht skills.
+Use this skill when the user asks to create or improve a Wacht skill, add a new skill to `wacht-platform/bench`, or make project-specific Wacht skills.
 
 ## Activation Rules
 

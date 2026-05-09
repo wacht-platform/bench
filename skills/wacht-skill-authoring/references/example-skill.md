@@ -1,6 +1,6 @@
 # Example Wacht Skill
 
-Use this as a compact template for a new skill in `wacht/skills`.
+Use this as a compact template for a new skill in `wacht-platform/bench`.
 
 ```md
 ---

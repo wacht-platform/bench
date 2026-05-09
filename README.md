@@ -9,13 +9,13 @@ The Wacht skills package is installed separately with the open Skills CLI, and B
 Install the full Wacht skill pack:
 
 ```bash
-npx skills add wacht/skills
+npx skills add wacht-platform/bench
 ```
 
 Install one skill:
 
 ```bash
-npx skills add wacht/skills --skill wacht-nextjs-patterns
+npx skills add wacht-platform/bench --skill wacht-nextjs-patterns
 ```
 
 Install from a local checkout:
@@ -32,7 +32,7 @@ wacht-bench mcp config --client cursor
 wacht-bench doctor
 ```
 
-The CLI is a convenience wrapper. The source of truth for installable agent skills is the `wacht/skills` package.
+The CLI is a convenience wrapper. The source of truth for installable agent skills is the `wacht-platform/bench` repository.
 
 ## What Bench Includes
 

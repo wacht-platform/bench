@@ -16,7 +16,7 @@ node scripts/validate-skills.mjs
 
 ## Product Names
 
-- Skills package: `wacht/skills`
+- Skills package: `wacht-platform/bench`
 - CLI product: Wacht Bench
 - NPM package: `@wacht/bench`
 - CLI binary: `wacht-bench`

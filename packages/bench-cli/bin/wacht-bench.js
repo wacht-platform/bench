@@ -3,7 +3,7 @@
 import { spawn } from 'node:child_process';
 
 const MCP_URL = 'https://wacht.dev/docs/mcp';
-const SKILLS_SOURCE = 'wacht/skills';
+const SKILLS_SOURCE = 'wacht-platform/bench';
 
 function printHelp() {
   console.log(`Wacht Bench
