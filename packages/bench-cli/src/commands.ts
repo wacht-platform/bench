@@ -1,4 +1,18 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { Command } from 'commander';
+
+const PKG_VERSION = (() => {
+  try {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const pkg = JSON.parse(readFileSync(path.join(here, '..', 'package.json'), 'utf8')) as { version?: string };
+    return pkg.version ?? '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+})();
 
 import { completionScript, type CompletionShell } from './completion.js';
 import {
@@ -18,7 +32,7 @@ import {
 import { initProject, initStarter } from './init.js';
 import { apiCommand, listProjects } from './machine-api.js';
 import { openApiCall, openApiDescribe, openApiList, openApiRefresh } from './openapi.js';
-import { printMcpConfig } from './mcp.js';
+import { installMcp, listMcp, printMcpConfig, uninstallMcp } from './mcp.js';
 import { authStatus, login, logout } from './oauth.js';
 import {
   createOrg,
@@ -138,19 +152,13 @@ function initArgs(options: {
   client?: string;
   installSkills?: boolean;
   skipAgents?: boolean;
-  skipConfig?: boolean;
   skipEnv?: boolean;
-  skipGuide?: boolean;
-  skipTemplates?: boolean;
 }): string[] {
   const args: string[] = [];
   if (options.client) args.push('--client', options.client);
   if (options.installSkills) args.push('--install-skills');
   if (options.skipAgents) args.push('--skip-agents');
-  if (options.skipConfig) args.push('--skip-config');
   if (options.skipEnv) args.push('--skip-env');
-  if (options.skipGuide) args.push('--skip-guide');
-  if (options.skipTemplates) args.push('--skip-templates');
   return args;
 }
 
@@ -160,6 +168,7 @@ export async function runCli(args: string[]): Promise<void> {
   program
     .name('wacht')
     .description('AI development workbench for Wacht')
+    .version(PKG_VERSION, '-v, --version', 'print Wacht Bench CLI version')
     .showHelpAfterError()
     .option('--json', 'emit machine-readable JSON where supported')
     .option('--quiet', 'suppress nonessential human output')
@@ -180,17 +189,11 @@ export async function runCli(args: string[]): Promise<void> {
     .option('--target <dir>', 'target directory when using --starter (defaults to ./wacht-<framework>-starter)')
     .option('--install-skills', 'run npx skills add after writing config')
     .option('--skip-agents', 'do not create or update AGENTS.md')
-    .option('--skip-config', 'do not write .wacht/bench.json')
     .option('--skip-env', 'do not write .env.wacht.example')
-    .option('--skip-guide', 'do not write .wacht/BOOTSTRAP.md')
-    .option('--skip-templates', 'do not write starter templates under .wacht/templates')
     .action(async (options: StarterOptions & {
       installSkills?: boolean;
       skipAgents?: boolean;
-      skipConfig?: boolean;
       skipEnv?: boolean;
-      skipGuide?: boolean;
-      skipTemplates?: boolean;
     }) => {
       const ctx = context(program);
       if (options.starter) {
@@ -296,11 +299,36 @@ export async function runCli(args: string[]): Promise<void> {
       await installSkills(options.skill);
     });
 
-  const mcp = program.command('mcp').description('print Wacht Docs MCP configuration');
+  const mcp = program.command('mcp').description('configure Wacht Docs MCP across AI clients');
+  mcp
+    .command('list')
+    .alias('ls')
+    .description('list known MCP clients with detection + install status')
+    .action(async () => {
+      await listMcp(context(program));
+    });
+  mcp
+    .command('install')
+    .description('install Wacht Docs MCP into one or more clients (interactive by default)')
+    .option('--client <ids>', 'comma-separated target ids; skips the picker', (value: string) => value.split(',').map((s) => s.trim()).filter(Boolean))
+    .option('--all', 'install into every known target without prompting')
+    .option('--yes', 'do not ask to confirm before writing')
+    .action(async (options: { client?: string[]; all?: boolean; yes?: boolean }) => {
+      await installMcp(context(program), { clients: options.client, all: options.all, yes: options.yes });
+    });
+  mcp
+    .command('uninstall')
+    .description('remove Wacht Docs MCP from one or more clients')
+    .option('--client <ids>', 'comma-separated target ids; skips the picker', (value: string) => value.split(',').map((s) => s.trim()).filter(Boolean))
+    .option('--all', 'remove from every known target without prompting')
+    .option('--yes', 'do not ask to confirm before writing')
+    .action(async (options: { client?: string[]; all?: boolean; yes?: boolean }) => {
+      await uninstallMcp(context(program), { clients: options.client, all: options.all, yes: options.yes });
+    });
   mcp
     .command('config')
-    .description('print MCP config JSON for an assistant client')
-    .option('--client <client>', 'cursor, claude, or codex', 'cursor')
+    .description('print raw MCP config JSON for a client (no file write)')
+    .option('--client <client>', 'claude-desktop, cursor, vscode, codex, windsurf, claude-code', 'cursor')
     .action((options: { client: string }) => {
       printMcpConfig(options.client);
     });

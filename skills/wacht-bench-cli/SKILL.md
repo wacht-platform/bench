@@ -16,7 +16,7 @@ Activate when the user asks to:
 - list, inspect, or create users / organizations / workspaces
 - pull, diff, or apply deployment settings as code
 - call any Wacht Machine API operation (e.g. impersonation tokens, webhook apps, API auth apps, AI runtime resources)
-- print MCP config for an editor (`wacht mcp config --client cursor`)
+- install Docs MCP into AI clients (`wacht mcp install`, `wacht mcp list`, `wacht mcp uninstall`)
 - bootstrap a brand-new Wacht-ready project (`wacht init --starter <framework>`)
 
 Do **not** activate to wire app code — that's `wacht-setup` and the framework-specific skills. The CLI is for working *against* a deployment, not inside an app.
@@ -41,7 +41,7 @@ Required docs:
 | Create a deployment | `wacht deployments create staging --project <id> --method email` |
 | Bootstrap a new project | `wacht init --starter nextjs` (or `react-router`, `tanstack`) |
 | Add Wacht to current project | `wacht init` |
-| Print MCP config for an editor | `wacht mcp config --client cursor` (or `claude`, `codex`) |
+| Install Docs MCP into AI clients | `wacht mcp install` (interactive) · `wacht mcp install --client cursor-user,codex --yes` · `wacht mcp list` to inspect |
 | List users in a deployment | `wacht users list --search "@acme.com"` |
 | Inspect a user | `wacht users get <user_id>` |
 | Create a user | `wacht users create --field email_address=person@example.com` |

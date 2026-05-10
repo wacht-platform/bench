@@ -5,11 +5,8 @@
   "description": "Workspace for Wacht skills, prompts, and the Bench CLI.",
   "type": "module",
   "scripts": {
-    "build": "npm --workspace @wacht/bench run build",
+    "build": "pnpm --filter @wacht/bench run build",
     "validate:skills": "node scripts/validate-skills.mjs",
     "bench": "node packages/bench-cli/dist/wacht.js"
-  },
-  "workspaces": [
-    "packages/*"
-  ]
+  }
 }

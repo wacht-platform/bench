@@ -96,3 +96,84 @@ export async function promptOptionalList(
   if (!answer) return [];
   return answer.split(',').map((item) => item.trim()).filter(Boolean);
 }
+
+export interface MultiSelectItem {
+  value: string;
+  label: string;
+  hint?: string;
+  preselected?: boolean;
+}
+
+function expandRange(token: string, max: number): number[] {
+  const range = token.match(/^(\d+)-(\d+)$/);
+  if (range) {
+    const start = Math.max(1, Number.parseInt(range[1], 10));
+    const end = Math.min(max, Number.parseInt(range[2], 10));
+    const result: number[] = [];
+    for (let i = start; i <= end; i += 1) result.push(i - 1);
+    return result;
+  }
+  const single = Number.parseInt(token, 10);
+  if (Number.isInteger(single) && single >= 1 && single <= max) return [single - 1];
+  return [];
+}
+
+export async function promptMultiSelect(
+  ctx: CliContext,
+  items: MultiSelectItem[],
+  question: string,
+): Promise<string[]> {
+  if (!canPrompt(ctx)) {
+    return items.filter((item) => item.preselected).map((item) => item.value);
+  }
+
+  const selected = new Set<number>();
+  items.forEach((item, index) => {
+    if (item.preselected) selected.add(index);
+  });
+
+  while (true) {
+    console.log('');
+    items.forEach((item, index) => {
+      const mark = selected.has(index) ? '[x]' : '[ ]';
+      const hint = item.hint ? ` [90m${item.hint}[0m` : '';
+      console.log(`  ${mark} ${index + 1}. ${item.label}${hint}`);
+    });
+    console.log('');
+    console.log('  Toggle by number/range (e.g. "1,3-5"), "all", "none", or press Enter to confirm.');
+    const answer = (await ask(`${question} `)).trim();
+    if (!answer) break;
+    const lower = answer.toLowerCase();
+    if (lower === 'all') {
+      items.forEach((_, index) => selected.add(index));
+      continue;
+    }
+    if (lower === 'none' || lower === 'clear') {
+      selected.clear();
+      continue;
+    }
+    if (lower === 'done' || lower === 'ok') break;
+    const tokens = answer.split(/[\s,]+/).filter(Boolean);
+    for (const token of tokens) {
+      const indices = expandRange(token, items.length);
+      for (const idx of indices) {
+        if (selected.has(idx)) selected.delete(idx);
+        else selected.add(idx);
+      }
+    }
+  }
+
+  return [...selected].map((idx) => items[idx].value);
+}
+
+export async function promptConfirm(
+  ctx: CliContext,
+  question: string,
+  defaultYes = true,
+): Promise<boolean> {
+  if (!canPrompt(ctx)) return defaultYes;
+  const suffix = defaultYes ? ' [Y/n] ' : ' [y/N] ';
+  const answer = (await ask(`${question}${suffix}`)).trim().toLowerCase();
+  if (!answer) return defaultYes;
+  return answer === 'y' || answer === 'yes';
+}
