@@ -67,15 +67,28 @@ function agentsBlock(profile: ProjectProfile): string {
   return `${AGENTS_START}
 ## Wacht Bench
 
-This project is configured for Wacht development.
+This project is configured for AI-assisted Wacht development.
 
-- Use Wacht skills when implementing Wacht auth, API auth, webhooks, organizations, workspaces, agents, or SDK integrations.
-- Before coding Wacht behavior, consult Wacht Docs MCP at \`${MCP_URL}\`.
-- Suggested Wacht skills for this project: \`${skills}\`.
+**Use the Wacht Bench CLI (\`wacht\`) for anything that touches Wacht state.** Don't write one-off scripts to call the Machine API — run a CLI command. Don't ask the user to click through the console for things the CLI can do.
+
 - Detected project shape: \`${frameworks}\`.
+- Suggested Wacht skills for this project: \`${skills}\`.
+- Active skill router: \`wacht\` (always start there). For CLI work specifically, use the \`wacht-bench-cli\` skill.
+- Before coding Wacht behavior, consult Wacht Docs MCP at \`${MCP_URL}\`.
 - Install or update skills with \`npx skills add ${SKILLS_SOURCE}\`.
-- Use \`wacht api ls\`, \`wacht api describe <operation>\`, and \`wacht api call <operation>\` for OpenAPI-backed Machine API work.
-- Use \`wacht deployments current\` before making deployment-specific changes.
+
+### Default CLI workflow
+
+| Need | Command |
+| --- | --- |
+| Sign in / check session | \`wacht login\` · \`wacht auth status\` |
+| Switch deployment | \`wacht deployments select\` · \`wacht deployments current\` |
+| Manage users | \`wacht users list\` · \`wacht users get <id>\` · \`wacht users create --field …\` |
+| Manage orgs / workspaces | \`wacht orgs list\` · \`wacht workspaces list --org <id>\` |
+| Pull / diff / apply config | \`wacht config pull\` · \`wacht config diff\` · \`wacht config apply --yes\` |
+| Discover any Machine API operation | \`wacht api ls --search <text>\` · \`wacht api describe <op>\` · \`wacht api call <op>\` |
+
+Always pass \`--json\` and \`--no-interactive\` when running commands inside an agent loop. Confirm the active deployment with \`wacht deployments current\` before any deployment-scoped change. Production config applies require \`--production --confirm <deployment_id> --yes\`.
 
 ${AGENTS_END}`;
 }

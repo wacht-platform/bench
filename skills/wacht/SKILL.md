@@ -33,6 +33,7 @@ Required docs:
 
 | User intent | Use skill |
 | --- | --- |
+| Manage Wacht resources (users, orgs, workspaces), call the Machine API, apply config, scaffold | `wacht-bench-cli` |
 | Add Wacht to a project, detect framework, choose packages | `wacht-setup` |
 | Next.js App Router, middleware/proxy, server actions, route handlers | `wacht-nextjs-patterns` |
 | React Router loaders/actions, SSR, route guards | `wacht-react-router-patterns` |
