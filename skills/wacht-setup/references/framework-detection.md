@@ -9,7 +9,6 @@ Use this reference when `wacht-setup` needs to choose packages or route to a spe
 | `next` | Use `@wacht/nextjs`; inspect Next major version for `proxy.ts` vs `middleware.ts`. |
 | `react-router` | Use `@wacht/react-router`; inspect loaders/actions and SSR mode. |
 | `@tanstack/react-router` | Use `@wacht/tanstack-router`; inspect route tree and route context. |
-| `vite` + `react` | Use `@wacht/jsx` for client UI; protected mutations still need backend auth. |
 | `@wacht/backend` already present | Preserve the existing server client pattern. |
 | `wacht` Rust crate | Preserve the existing `WachtClient` setup and feature flags. |
 
@@ -22,7 +21,6 @@ Use this reference when `wacht-setup` needs to choose packages or route to a spe
 | `middleware.ts` | Next.js 15 or older request middleware entrypoint. |
 | `src/routes/*` with loaders/actions | React Router route-level data APIs. |
 | `src/routeTree.gen.ts` or route tree setup | TanStack Router. |
-| `src/main.tsx` and no server router | React SPA. |
 | `Cargo.toml` with `axum` | Rust Axum service. |
 
 ## Package Manager Detection

@@ -29,10 +29,9 @@ Required docs:
 
 | Signal | Framework | Package | Next skill |
 | --- | --- | --- | --- |
-| `next` dependency, `app/`, `pages/`, `next.config.*` | Next.js | `@wacht/nextjs @wacht/jsx @wacht/types` | `wacht-nextjs-patterns` |
-| `react-router` dependency, route loaders/actions | React Router | `@wacht/react-router @wacht/jsx @wacht/types` | `wacht-react-router-patterns` |
-| `@tanstack/react-router` dependency | TanStack Router | `@wacht/tanstack-router @wacht/jsx @wacht/types` | `wacht-tanstack-router-patterns` |
-| `vite` + `react`, no full-stack router | React SPA | `@wacht/jsx @wacht/types` | `wacht-react-spa-patterns` |
+| `next` dependency, `app/`, `pages/`, `next.config.*` | Next.js | `@wacht/nextjs @wacht/types` | `wacht-nextjs-patterns` |
+| `react-router` dependency, route loaders/actions | React Router | `@wacht/react-router @wacht/types` | `wacht-react-router-patterns` |
+| `@tanstack/react-router` dependency | TanStack Router | `@wacht/tanstack-router @wacht/types` | `wacht-tanstack-router-patterns` |
 | Node server package, Hono, Express, Fastify, Workers | Backend JS | `@wacht/backend` | `wacht-backend-js` |
 | `Cargo.toml`, Axum routes | Rust | `wacht` crate | `wacht-rust-axum` |
 
@@ -54,7 +53,6 @@ Read `references/framework-detection.md` for deeper detection and package select
    - Next.js: `@wacht/nextjs`
    - React Router: `@wacht/react-router`
    - TanStack Router: `@wacht/tanstack-router`
-   - React-only UI: `@wacht/jsx` and `@wacht/types`
    - Server JS: `@wacht/backend`
    - Rust: `wacht`
 3. Identify where app providers, route guards, server handlers, and environment config already live.
@@ -66,7 +64,7 @@ Read `references/framework-detection.md` for deeper detection and package select
 ### Next.js
 
 ```bash
-pnpm add @wacht/nextjs @wacht/jsx @wacht/types
+pnpm add @wacht/nextjs @wacht/types
 ```
 
 Required env:

@@ -20,7 +20,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: npm ci
+        working-directory: bench
+      - run: npm run build
+        working-directory: bench
       - run: node scripts/validate-skills.mjs
         working-directory: bench
-      - run: node packages/bench-cli/bin/wacht-bench.js mcp config --client cursor | jq -e '.mcpServers["wacht-docs"].url == "https://wacht.dev/docs/mcp"'
+      - run: node packages/bench-cli/dist/wacht.js mcp config --client cursor | jq -e '.mcpServers["wacht-docs"].url == "https://wacht.dev/docs/mcp"'
         working-directory: bench

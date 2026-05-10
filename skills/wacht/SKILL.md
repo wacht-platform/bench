@@ -37,9 +37,7 @@ Required docs:
 | Next.js App Router, middleware/proxy, server actions, route handlers | `wacht-nextjs-patterns` |
 | React Router loaders/actions, SSR, route guards | `wacht-react-router-patterns` |
 | TanStack Router route guards, server functions, route context | `wacht-tanstack-router-patterns` |
-| Vite, CRA, React SPA, client-only app shell | `wacht-react-spa-patterns` |
 | Node, Bun, Deno, Hono, Workers, serverless backend auth | `wacht-backend-js` |
-| Rust service, Axum middleware, Rust SDK | `wacht-rust-axum` |
 | B2B SaaS, orgs, workspaces, roles, tenancy | `wacht-orgs-workspaces` |
 | Customer API keys, OAuth clients, gateway authorization | `wacht-api-auth` |
 | Webhook apps, receiver verification, replay, idempotency | `wacht-webhooks` |

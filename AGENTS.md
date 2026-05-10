@@ -19,5 +19,5 @@ node scripts/validate-skills.mjs
 - Skills package: `wacht-platform/bench`
 - CLI product: Wacht Bench
 - NPM package: `@wacht/bench`
-- CLI binary: `wacht-bench`
+- CLI binary: `wacht`
 - MCP endpoint: `https://wacht.dev/docs/mcp`

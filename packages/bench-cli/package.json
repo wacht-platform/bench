@@ -4,11 +4,15 @@
   "description": "CLI for Wacht Bench, the AI development workbench for Wacht.",
   "type": "module",
   "bin": {
-    "wacht-bench": "./bin/wacht-bench.js"
+    "wacht": "./dist/wacht.js"
   },
   "files": [
-    "bin"
+    "dist"
   ],
+  "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "prepack": "npm run build"
+  },
   "keywords": [
     "wacht",
     "bench",
@@ -19,5 +23,12 @@
   "license": "Apache-2.0",
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "typescript": "^5.8.3"
   }
 }
