@@ -2,14 +2,43 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { MACHINE_API_URL } from './config.js';
+import { readBenchContext } from './context-store.js';
 import { getValidAuth } from './oauth.js';
 import { promptChoice, promptOptionalList, promptText } from './prompts.js';
 import type { CliContext } from './types.js';
 import { field, log, printBannerFor, printJson, section } from './ui.js';
 
+function isProjectScopedPath(p: string): boolean {
+  if (p === '/projects' || p === '/project') return true;
+  if (p.startsWith('/projects/') || p.startsWith('/project/')) return true;
+  return false;
+}
+
+function isAlreadyDeploymentScoped(p: string): boolean {
+  return p === '/deployments' || p.startsWith('/deployments/');
+}
+
+async function applyDeploymentPrefix(pathname: string): Promise<string> {
+  const normalized = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  if (isProjectScopedPath(normalized) || isAlreadyDeploymentScoped(normalized)) {
+    return normalized;
+  }
+  const context = await readBenchContext();
+  if (!context?.deployment_id) {
+    throw new Error('No active deployment selected. Run `wacht deployments select`.');
+  }
+  const splitIdx = normalized.search(/[?#]/);
+  const prefix = `/deployments/${context.deployment_id}`;
+  const pathPart = splitIdx === -1 ? normalized : normalized.slice(0, splitIdx);
+  const suffix = splitIdx === -1 ? '' : normalized.slice(splitIdx);
+  const joinedPath = pathPart === '/' ? prefix : `${prefix}${pathPart}`;
+  return `${joinedPath}${suffix}`;
+}
+
 export async function machineRequest(pathname: string, options: RequestInit = {}): Promise<unknown> {
   const auth = await getValidAuth();
-  const url = new URL(pathname, auth.machine_api_url || MACHINE_API_URL);
+  const resolvedPath = await applyDeploymentPrefix(pathname);
+  const url = new URL(resolvedPath, auth.machine_api_url || MACHINE_API_URL);
   const headers = new Headers(options.headers);
   headers.set('authorization', `Bearer ${auth.access_token}`);
   headers.set('accept', 'application/json');

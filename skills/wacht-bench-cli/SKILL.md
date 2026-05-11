@@ -41,6 +41,7 @@ Required docs:
 | Create a deployment | `wacht deployments create staging --project <id> --method email` |
 | Bootstrap a new project | `wacht init --starter nextjs` (or `react-router`, `tanstack`) |
 | Add Wacht to current project | `wacht init` |
+| Mint deployment credentials + write `.env.local` | `wacht env pull` (each call rotates the backend key) |
 | Install Docs MCP into AI clients | `wacht mcp install` (interactive) · `wacht mcp install --client cursor-user,codex --yes` · `wacht mcp list` to inspect |
 | List users in a deployment | `wacht users list --search "@acme.com"` |
 | Inspect a user | `wacht users get <user_id>` |
@@ -78,6 +79,23 @@ wacht login
 wacht deployments select
 wacht deployments current
 ```
+
+### Bootstrap a runnable app from scratch
+
+```bash
+wacht init --starter nextjs        # scaffold Next.js + Wacht wiring
+cd <scaffold-dir>
+wacht env pull                     # mint a backend API key + write .env.local
+pnpm install && pnpm dev
+```
+
+`wacht env pull` calls the deployment's `/credentials` endpoint, which:
+
+- Reads `publishable_key` and hosts from the deployment.
+- Mints a **fresh** backend API key under the deployment's reserved system app (`aa_<deployment_id>`), so every call rotates a new secret. Prior keys are not revoked — re-pulling on a teammate's machine doesn't invalidate yours.
+- Writes `NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY` (Next.js) or `VITE_WACHT_PUBLISHABLE_KEY` (React Router / TanStack) plus `WACHT_API_KEY` into `.env.local`, preserving other lines. Pass `--file <path>` to override or `--print` to dump without writing.
+
+The minted `WACHT_API_KEY` is `sk_test_<secret>` on staging deployments and `sk_live_<secret>` on production. It is shown **once** — `wacht env pull` is the only place it appears in plaintext.
 
 ### Create a new project + staging deployment
 

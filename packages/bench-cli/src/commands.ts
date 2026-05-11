@@ -30,6 +30,7 @@ import {
   selectDeployment,
 } from './deployment-context.js';
 import { initProject, initStarter } from './init.js';
+import { envPull } from './env-pull.js';
 import { apiCommand, listProjects } from './machine-api.js';
 import { openApiCall, openApiDescribe, openApiList, openApiRefresh } from './openapi.js';
 import { installMcp, listMcp, printMcpConfig, uninstallMcp } from './mcp.js';
@@ -293,10 +294,33 @@ export async function runCli(args: string[]): Promise<void> {
   const skills = program.command('skills').description('install Wacht agent skills');
   skills
     .command('install')
-    .description('install the Wacht skills pack')
+    .description('install the Wacht skills pack into one or more AI agents')
     .option('--skill <name>', 'install one skill from the pack')
-    .action(async (options: { skill?: string }) => {
-      await installSkills(options.skill);
+    .option(
+      '--agent <ids>',
+      'comma-separated agent ids (e.g. claude-code,cursor,codex); skips the agent picker',
+      (value: string) => value.split(',').map((s) => s.trim()).filter(Boolean),
+    )
+    .option('--all-agents', "install into every supported agent (passes -a '*')")
+    .option('--global', 'install at user scope instead of project scope')
+    .option('--yes', 'do not prompt for confirmation')
+    .option('--copy', 'copy skill files instead of symlinking')
+    .action(async (options: {
+      skill?: string;
+      agent?: string[];
+      allAgents?: boolean;
+      global?: boolean;
+      yes?: boolean;
+      copy?: boolean;
+    }) => {
+      await installSkills({
+        skill: options.skill,
+        agents: options.agent,
+        allAgents: options.allAgents,
+        global: options.global,
+        yes: options.yes,
+        copy: options.copy,
+      });
     });
 
   const mcp = program.command('mcp').description('configure Wacht Docs MCP across AI clients');
@@ -331,6 +355,16 @@ export async function runCli(args: string[]): Promise<void> {
     .option('--client <client>', 'claude-desktop, cursor, vscode, codex, windsurf, claude-code', 'cursor')
     .action((options: { client: string }) => {
       printMcpConfig(options.client);
+    });
+
+  const env = program.command('env').description('manage deployment credentials and environment files');
+  env
+    .command('pull')
+    .description('mint a fresh backend API key for the active deployment and write keys to .env.local')
+    .option('--file <path>', 'env file path; defaults to .env.local in the current directory')
+    .option('--print', 'print credentials to stdout instead of writing the env file')
+    .action(async (options: { file?: string; print?: boolean }) => {
+      await envPull(context(program), options);
     });
 
   const config = program.command('config').description('manage Wacht deployment settings as code');

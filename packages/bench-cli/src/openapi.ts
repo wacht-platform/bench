@@ -300,11 +300,15 @@ export async function openApiCall(ctx: CliContext, target: string, options: Call
   };
 
   const pathWithParams = appendQueryParams(applyPathParams(operation.path, params), params, operation);
-  const machinePath = pathWithParams.startsWith('/project') || pathWithParams === '/projects'
-    ? pathWithParams
-    : `/deployments/${deploymentId ?? ''}${pathWithParams}`;
-  if (machinePath.includes('/deployments//')) {
+  const isProjectScoped = pathWithParams.startsWith('/project') || pathWithParams === '/projects';
+  let machinePath: string;
+  if (isProjectScoped) {
+    machinePath = pathWithParams;
+  } else if (!deploymentId) {
     throw new Error('Select an active deployment first, or pass raw paths with `wacht api METHOD /path`.');
+  } else {
+    const base = `/deployments/${deploymentId}`;
+    machinePath = pathWithParams === '/' ? base : `${base}${pathWithParams}`;
   }
 
   const { body, headers } = await requestBody(apiOptions);

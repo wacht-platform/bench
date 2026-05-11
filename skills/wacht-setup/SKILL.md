@@ -57,7 +57,28 @@ Read `references/framework-detection.md` for deeper detection and package select
    - Rust: `wacht`
 3. Identify where app providers, route guards, server handlers, and environment config already live.
 4. Add only the minimum Wacht setup needed for the user's goal.
-5. Hand off to the framework-specific Wacht skill for detailed implementation.
+5. **Populate credentials with `wacht env pull`** instead of asking the user to paste keys from the console. It writes `.env.local` automatically. See `wacht-bench-cli` for details.
+6. Hand off to the framework-specific Wacht skill for detailed implementation.
+
+## Populating credentials
+
+The Bench CLI auto-provisions credentials from the active deployment. Prefer this over hand-pasting from the console:
+
+```bash
+wacht login                # one-time per machine
+wacht deployments select   # pick the deployment
+wacht env pull             # writes publishable + API key to .env.local
+```
+
+What `wacht env pull` writes (framework-detected):
+
+| Framework | Public key var |
+| --- | --- |
+| Next.js | `NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY` |
+| React Router / TanStack Router | `VITE_WACHT_PUBLISHABLE_KEY` |
+| Other | `NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY` (default) |
+
+`WACHT_API_KEY` is the server-side backend key (`sk_test_…` on staging, `sk_live_…` on production). Every `env pull` mints a fresh key; existing keys keep working until revoked from the console.
 
 ## Minimal Setup Patterns
 
@@ -67,11 +88,11 @@ Read `references/framework-detection.md` for deeper detection and package select
 pnpm add @wacht/nextjs @wacht/types
 ```
 
-Required env:
+Required env (prefer `wacht env pull` to populate these):
 
 ```bash
-NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY=pk_test_xxx
-WACHT_API_KEY=wk_live_xxx
+NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY=pk_test_…    # public, ships in the browser bundle
+WACHT_API_KEY=sk_test_…                        # sk_live_… on production deployments
 ```
 
 Mount `DeploymentProvider` once and add `wachtMiddleware()` in `proxy.ts` for Next.js 16 or `middleware.ts` for older versions.
@@ -85,7 +106,7 @@ pnpm add @wacht/backend
 Required env:
 
 ```bash
-WACHT_API_KEY=wk_live_xxx
+WACHT_API_KEY=sk_test_…                        # sk_live_… on production deployments
 WACHT_BACKEND_API_URL=https://...
 ```
 

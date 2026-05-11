@@ -47,7 +47,7 @@ NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY=pk_test_xxx
 Server-only API key:
 
 ```bash
-WACHT_API_KEY=wk_live_xxx
+WACHT_API_KEY=sk_live_xxx
 ```
 
 Backend URL override, when needed:

@@ -167,10 +167,10 @@ export async function initProject(args: string[], ctx: CliContext): Promise<void
   if (options.installSkills) {
     log(ctx, '');
     log(ctx, section('Install Skills'));
-    await installSkills();
+    await installSkills({ yes: true });
   } else {
     log(ctx, '');
-    log(ctx, field('Skills', `run ${command('wacht skills add')} when you want to install/update the pack`));
+    log(ctx, field('Skills', `run ${command('wacht skills install')} when you want to install/update the pack`));
   }
 
   if (ctx.json) {

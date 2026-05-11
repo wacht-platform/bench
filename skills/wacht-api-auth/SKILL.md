@@ -33,6 +33,17 @@ API Auth has two separate surfaces:
 
 Never let the frontend mint management access directly. Your backend is the policy authority.
 
+### Two kinds of API Auth apps per deployment
+
+Every deployment surface shows API Auth apps to the developer, but two distinct kinds exist:
+
+| Kind | Slug pattern | Origin | Purpose |
+| --- | --- | --- | --- |
+| **System / backend app** | `aa_<deployment_id>` | Auto-provisioned at deployment creation | Holds the key your own backend (`@wacht/backend`, `WACHT_API_KEY`) uses to talk to its deployment. The backend router derives `deployment_id` from the key's slug, so this exact pattern is load-bearing. |
+| **Customer apps** | Any user-chosen slug | Created by the developer in the console (or via `createApiAuthApp`) | Surfaces customers' own gateway-protected APIs, with custom permissions/resources/rate limits. |
+
+When you need the deployment's own backend API key (e.g. populating `WACHT_API_KEY` for a Next.js scaffold), prefer the Bench CLI: `wacht env pull` mints a fresh key under the system app and writes `.env.local`. Don't try to issue or rotate keys against `aa_<id>` from custom code — the system app is treated as platform-owned.
+
 ## Quick Reference
 
 | Task | Pattern |
