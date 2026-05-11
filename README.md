@@ -1,159 +1,190 @@
 # Wacht Bench
 
-Wacht Bench is the AI development CLI for building with Wacht.
+Wacht is an identity, B2B, API auth, webhooks, and agent-runtime layer for SaaS. This repo is the developer toolkit you use when building on it: a bundle of 15 agent skills plus the `wacht` CLI for working against your Wacht deployments from the terminal.
 
-The Wacht skills package is installed separately with the open Skills CLI, and Bench helps configure those skills, Wacht Docs MCP, prompts, and future scaffolding.
+If you're using an AI coding assistant (Claude Code, Cursor, Windsurf, Codex, etc.), install the skills. They tell your assistant which patterns to use, where to find current docs, and which CLI command to reach for. That avoids the usual "the API for that endpoint has changed and the LLM is giving you stale snippets" problem.
 
-## Install Skills
+## Install
 
-Install the full Wacht skill pack:
+The whole skill pack:
 
 ```bash
 npx skills add wacht-platform/bench
 ```
 
-Install one skill:
+One skill at a time:
 
 ```bash
 npx skills add wacht-platform/bench --skill wacht-nextjs-patterns
 ```
 
-Install from a local checkout:
+The CLI is separate. Install globally with whatever package manager you use:
 
 ```bash
-npx skills add ./bench
+npm i -g @wacht/bench
+wacht --version
 ```
 
-## Use the CLI
-
-Run without installing:
+Or run it without installing:
 
 ```bash
 npx @wacht/bench init
-npx @wacht/bench login
 ```
 
-After installing globally or as a project tool, use the `wacht` command:
+## What's in the pack
+
+15 skills, each scoped to a specific concern so your assistant only loads what's relevant.
+
+**Routing**
+
+- `wacht`. The entry-point skill. Start here. It picks the right specialist for any Wacht task.
+
+**Setup + CLI**
+
+- `wacht-setup`. Bootstrapping Wacht in a new or existing app. Framework detection, SDK package selection, first working sign-in flow.
+- `wacht-bench-cli`. Using the `wacht` CLI to read or change Wacht state. Users, orgs, workspaces, deployments, raw Machine API calls.
+
+**Framework integrations**
+
+- `wacht-nextjs-patterns`. Providers, middleware, route protection, account UI in Next.js.
+- `wacht-react-router-patterns`. Same for React Router. Loaders, actions, server auth.
+- `wacht-tanstack-router-patterns`. Same for TanStack Router. `beforeLoad`, server functions, route guards.
+- `wacht-backend-js`. Server-side Node, Bun, Cloudflare Workers, Hono. Token verification, gateway authorization.
+- `wacht-rust-axum`. Rust + Axum. Middleware, extractors, gateway checks.
+
+**Product surfaces**
+
+- `wacht-orgs-workspaces`. B2B tenancy. Organizations, workspaces, memberships, role checks.
+- `wacht-api-auth`. API keys, OAuth apps, machine credentials. Hosted and custom API auth flows.
+- `wacht-webhooks`. Webhook endpoints. Signatures, replay, idempotency.
+- `wacht-notifications`. Notification inboxes, realtime streams, backend sending.
+- `wacht-agents`. Agent runtime. Tools, MCP, model overrides, approval policies, execution hooks.
+
+**Testing + authoring**
+
+- `wacht-testing`. Test patterns across auth, tenancy, agents.
+- `wacht-skill-authoring`. For contributors. How to add or modify skills in this pack.
+
+## What `wacht` does
+
+It's the convenience wrapper for the things you'd otherwise click through the Wacht console for.
+
+Quickstart:
 
 ```bash
-wacht init
-wacht login
-wacht deployments current
-wacht deployments select
-wacht projects list
-wacht projects create --name "My App" --method email
-wacht deployments create staging --project <project_id> --method email
-wacht deployments create staging --project <project_id> --method email --method github_oauth
-wacht config pull
-wacht config diff
-wacht config apply --dry-run
-wacht mcp config --client cursor
-wacht doctor
+wacht login                            # OAuth via browser
+wacht deployments select               # pick the deployment you're working against
+wacht users list --search "@acme.com"
+wacht users create --field email_address=person@example.com
+wacht orgs list
+wacht workspaces list --org <org_id>
 ```
 
-`wacht init` detects Next.js, React Router, and TanStack Router projects, then writes AI-ready Wacht context. It does not wire framework code, patch app files, or edit package dependencies. Bench prepares the project/deployment context and starter templates so an AI assistant can use the installed skills, Docs MCP, and OpenAPI discovery to make the correct app-specific edits.
-
-Generated bootstrap files can include:
-
-```text
-.wacht/bench.json
-.wacht/BOOTSTRAP.md
-.env.wacht.example
-AGENTS.md
-.wacht/templates/**/*
-```
-
-Starter templates can include provider, middleware/protected-request, and contract wrapper files. They are intentionally written under `.wacht/templates` only and are not imported by the app.
-
-Supported project and staging auth methods are `email`, `phone`, `username`, `google_oauth`, `apple_oauth`, `facebook_oauth`, `github_oauth`, `discord_oauth`, `linkedin_oauth`, `gitlab_oauth`, and `x_oauth`. Production creation follows the console flow and accepts `email`, `phone`, and `username`; social providers can be configured after deployment creation.
-
-Commands are interactive by default when run in a real terminal. Use explicit flags for automation:
+Bring Wacht up in a fresh project:
 
 ```bash
-wacht --json auth status
-wacht --json projects list
-wacht --no-interactive projects create --name "My App" --method email
-wacht --no-interactive deployments create staging --project <project_id> --method email
+wacht init                             # adds AGENTS.md block + .env.wacht.example
+wacht init --starter nextjs            # clones a working starter and bootstraps it
 ```
 
-Generic Machine API calls support JSON, URL-encoded forms, multipart text fields, and multipart files:
+Wire the Docs MCP server into your AI client:
 
 ```bash
-wacht api GET /projects
-wacht api POST /project --form name="My App" --form methods=email
-wacht api POST /upload --form purpose=avatar --file image=./avatar.png
-wacht api POST /upload --form image=@./avatar.png
+wacht mcp install                      # interactive picker, auto-detects installed clients
+wacht mcp install --client cursor-user,codex --yes
+wacht mcp list
 ```
 
-OpenAPI discovery is available for backend operations:
+Drive the Machine API directly. Any endpoint, no SDK glue code needed:
 
 ```bash
-wacht api schema refresh
 wacht api ls --search users
 wacht api describe createUser
-wacht api call getActiveUserList --param limit=10
-wacht api call createUser --form email_address=person@example.com
-wacht api call getActiveUserList --deployment <deployment_id> --param limit=10
+wacht api call createUser --field email_address=person@example.com
 ```
 
-The OpenAPI schema is cached at `~/.wacht/platform-api.openapi.json` for 24 hours. Use `--refresh` on `api ls`, `api describe`, or `api call` when you need the latest schema immediately.
-
-Deployment settings can be managed as config:
+Manage deployment settings as code:
 
 ```bash
 wacht config pull
-wacht config schema > wacht.config.schema.json
-wacht config diff --file wacht.config.json
-wacht config apply --file wacht.config.json --dry-run
-wacht config apply --file wacht.config.json --yes
+wacht config diff
+wacht config apply --yes
 ```
 
-Production applies require an explicit deployment confirmation:
+Full command list with `wacht --help` or at https://wacht.dev/docs/guides/wacht-bench.
+
+## What `wacht init` writes
+
+A short context block for your AI assistant. No app code, no package edits, no patched layouts.
+
+- `.env.wacht.example`. The env vars your SDK actually reads. Framework-aware (`NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY` for Next.js, `VITE_WACHT_PUBLISHABLE_KEY` for Vite-based stacks), plus `WACHT_API_KEY`.
+- `AGENTS.md`. Appends a Wacht block with a routing table that points your assistant at the right skill, the Docs MCP URL, and the right CLI command for each task. Creates the file if it doesn't exist yet.
+
+That's it. Your assistant then has enough context to do the actual app integration without guessing.
+
+## The Docs MCP server
+
+`https://wacht.dev/docs/mcp` serves the current SDK reference, API surface, and guide content as MCP tool calls. Your assistant reaches for it before writing Wacht code, so it always works against current info instead of stale snippets from training data.
+
+`wacht mcp install` wires it into any of these clients with one command, automatically detecting what's installed on your machine:
+
+- Claude Desktop
+- Claude Code (user + project scope)
+- Cursor (user + project scope)
+- VS Code (user + project scope)
+- Windsurf
+- Codex CLI
+
+`wacht mcp list` shows what's detected. `wacht mcp uninstall` reverses an install.
+
+## Auth
+
+The CLI uses Wacht's own OAuth public client with PKCE. No client secret bundled. Tokens land in `~/.wacht/bench-auth.json`.
+
+```text
+OAuth issuer: https://m2ma.wacht.dev
+Machine API:  https://machine.wacht.dev
+Client ID:    oc_SCoNL5oNiIiELWFhknqQsUvQ9FDrfMBC
+Redirect:     http://127.0.0.1:37819/callback
+```
+
+## Recommended AGENTS.md / system prompt
+
+If you don't run `wacht init`, drop this into your project's `AGENTS.md` or your assistant's system prompt:
+
+```text
+Use Wacht skills for Wacht implementation work. Start with the `wacht` skill.
+Before writing Wacht code, consult Wacht Docs MCP at https://wacht.dev/docs/mcp.
+Use the `wacht` CLI for anything that reads or changes Wacht state.
+```
+
+## Agent loop hygiene
+
+If you're running these inside an agent loop (Claude Code, Cursor agent mode, etc.), the CLI behaves predictably:
+
+- Pass `--json` to get machine-readable output for every command that supports it.
+- Pass `--no-interactive` to disable prompts (the CLI will fail loudly instead of hanging on stdin).
+- Production config applies require `--production --confirm <deployment_id> --yes`. Triple lock on purpose.
+
+## Repo layout
+
+```text
+skills/                 The 15 installable skills
+prompts/                Reusable prompts for common flows
+packages/bench-cli/     Source for @wacht/bench
+scripts/                Repo validation
+```
+
+## Validating the skill pack
+
+Useful if you fork this or write your own:
 
 ```bash
-wacht config apply --file wacht.config.json --production --confirm <deployment_id> --yes
+node scripts/validate-skills.mjs
 ```
 
-Config pull uses the active deployment selected by `wacht deployments select`. It writes editable auth, display, B2B, and restriction settings. Secrets and provider credentials are not written to config files.
+Checks frontmatter, doc references, and naming conventions across every skill.
 
-For agents, prefer `--json` and pass every input with flags. For humans, `wacht api` can prompt for method, path, body type, fields, and files.
+## License
 
-The CLI is a convenience wrapper. The source of truth for installable agent skills is the `wacht-platform/bench` repository.
-
-## Bench Auth
-
-Bench uses Wacht's first-party public OAuth client with Authorization Code + PKCE. No client secret is shipped in the CLI.
-
-```text
-Client ID: oc_SCoNL5oNiIiELWFhknqQsUvQ9FDrfMBC
-Redirect URI: http://127.0.0.1:37819/callback
-Scopes: read write
-OAuth issuer: https://m2ma.wacht.dev
-Machine API: https://machine.wacht.dev
-```
-
-Tokens are stored locally at `~/.wacht/bench-auth.json`.
-
-## What Bench Includes
-
-- Agent skills for Wacht app development across Next.js, React Router, TanStack Router, Backend JS, API Auth, webhooks, notifications, agents, testing, B2B tenancy, and skill authoring.
-- Prompts for common Wacht implementation flows.
-- MCP setup snippets for `https://wacht.dev/docs/mcp`.
-- Validation scripts for the skill pack.
-
-## Recommended Assistant Instruction
-
-```text
-Use Wacht skills for Wacht implementation work.
-Before coding, use the Wacht Docs MCP server at https://wacht.dev/docs/mcp for current Wacht SDK, API, and guide details.
-Run the validation commands named by the active skill before finishing.
-```
-
-## Repository Layout
-
-```text
-skills/                 Installable agent skills
-prompts/                Reusable prompts for common Wacht work
-packages/bench-cli/     @wacht/bench CLI package
-scripts/                Repo validation scripts
-```
+Apache-2.0.
