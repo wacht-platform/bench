@@ -308,9 +308,16 @@ export async function requestBody(options: ApiOptions): Promise<{ body?: NonNull
   }
 
   if (options.body) {
+    // `--body @path/to/file.json` reads the JSON from disk so prompt files and
+    // larger configuration blobs don't have to be inlined in the shell.
+    let source = options.body;
+    if (source.startsWith('@')) {
+      const filePath = path.resolve(source.slice(1));
+      source = await readFile(filePath, 'utf8');
+    }
     headers.set('content-type', 'application/json');
     return {
-      body: JSON.stringify(JSON.parse(options.body)),
+      body: JSON.stringify(JSON.parse(source)),
       headers,
     };
   }

@@ -30,6 +30,7 @@ import {
   selectDeployment,
 } from './deployment-context.js';
 import { initProject, initStarter } from './init.js';
+import { docsSearch } from './docs-search.js';
 import { envPull } from './env-pull.js';
 import { apiCommand, listProjects } from './machine-api.js';
 import { openApiCall, openApiDescribe, openApiList, openApiRefresh } from './openapi.js';
@@ -357,6 +358,22 @@ export async function runCli(args: string[]): Promise<void> {
       printMcpConfig(options.client);
     });
 
+  const docs = program.command('docs').description('search and explore Wacht docs');
+  docs
+    .command('search <query...>')
+    .description('full-text search Wacht docs and print matching pages')
+    .option('--limit <n>', 'max number of pages to print', (v: string) => Number.parseInt(v, 10))
+    .option('--base-url <url>', 'docs base URL (default: https://wacht.dev/docs, or $WACHT_DOCS_URL)')
+    .option('--json', 'emit JSON instead of human-readable output')
+    .action(async (queryParts: string[], options: { limit?: number; baseUrl?: string; json?: boolean }) => {
+      await docsSearch(context(program), {
+        query: queryParts.join(' '),
+        limit: options.limit,
+        baseUrl: options.baseUrl,
+        json: options.json,
+      });
+    });
+
   const env = program.command('env').description('manage deployment credentials and environment files');
   env
     .command('pull')
@@ -450,14 +467,18 @@ export async function runCli(args: string[]): Promise<void> {
     .argument('<operation>', 'OpenAPI operation id')
     .option('--deployment <id>', 'deployment id override; defaults to active deployment')
     .option('--param <key=value>', 'path or query parameter; repeatable', collect, [])
-    .option('--body <json>', 'JSON request body')
+    .option('--body <json>', 'JSON request body; pass @path/to/file.json to read from disk')
     .option('--field <key=value>', 'URL-encoded form field; repeatable', collect, [])
     .option('--form <key=value>', 'multipart form field; value @path is treated as a file; repeatable', collect, [])
     .option('--file <key=path>', 'multipart file field; key=path or key=@path; repeatable', collect, [])
     .option('--header <key=value>', 'request header; repeatable', collect, [])
     .option('--refresh', 'refresh the cached OpenAPI schema first')
-    .action(async (operation: string, options: ApiOptions) => {
-      await openApiCall(context(program), operation, options);
+    .option('--no-validate', 'skip local JSON Schema validation of the request body')
+    .action(async (operation: string, _options: ApiOptions, cmd: Command) => {
+      // The parent `api` command also declares --body / --field / --form / --file / --header
+      // so `optsWithGlobals()` is what actually surfaces them through this subcommand.
+      // Commander does not merge clashing options automatically.
+      await openApiCall(context(program), operation, cmd.optsWithGlobals() as ApiOptions);
     });
 
   const schema = api.command('schema').description('manage cached OpenAPI schema');

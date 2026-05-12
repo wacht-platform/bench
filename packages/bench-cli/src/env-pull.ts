@@ -90,11 +90,16 @@ export async function envPull(ctx: CliContext, options: EnvPullOptions = {}): Pr
 
   const root = process.cwd();
   const profile = await detectProject(root);
-  const pubVar = publishableKeyVar(new Set(profile.frameworks));
+  const frameworks = new Set(profile.frameworks);
+  const pubVar = publishableKeyVar(frameworks);
 
+  // Vite-based frameworks read `.env`; Next.js reads `.env.local`.
+  const defaultFile = frameworks.has('React Router') || frameworks.has('TanStack Router')
+    ? '.env'
+    : '.env.local';
   const filePath = options.file
     ? path.resolve(root, options.file)
-    : path.join(root, '.env.local');
+    : path.join(root, defaultFile);
 
   const existing = await readFile(filePath, 'utf8').catch((err: NodeJS.ErrnoException) => {
     if (err.code === 'ENOENT') return '';

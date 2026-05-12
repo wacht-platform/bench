@@ -33,10 +33,170 @@ Required docs:
 | Run setup/cleanup around executions | execution hooks |
 | Risky tools need review | approval policy |
 | External tool server | MCP server + actor connection |
+| Third-party app (Reddit, Gmail, …) as a tool | Composio toolkit enabled on the deployment; tools auto-surface at runtime |
 | Agent-specific procedural knowledge | agent-local skill bundle |
+| Recurring or scheduled agent work | project task board item with `schedule_kind` |
+| Share an agent chat URL with a teammate or end user | backend session ticket + vanity URL |
 | Tool call auditability | execution/tool event logs |
 
 Read `references/runtime-concept-map.md` before changing agent execution behavior, approvals, hooks, MCP tools, or skill bundle logic.
+
+## Object Hierarchy
+
+Wacht agents live inside an `actor → project → (board items + threads)` tree. The agent record is the *executor*; per-run instructions and scheduling live on board items.
+
+| Object | Created by | Role |
+| --- | --- | --- |
+| Actor | `createActor` (`subject_type`, `external_key`) | The "as whom" the agent runs — typically a Wacht user or a service identity. |
+| Agent | `createAiAgent` | Reusable executor: model overrides, tools, knowledge bases, hooks, approval rules. No task-level prompt — the agent itself has no `instructions` field. |
+| Actor project | `createActorProjectFlat` (`actor_id` query param, body `agent_id` + `name`) | A unit of work the agent owns; carries a board of tasks and a stream of threads. |
+| Board item (task) | `createProjectTaskBoardItem` | The actual task: `title`, `description` (the prompt), `schedule_kind`, `next_run_at`, `interval_seconds`, and optional `mounts`. |
+| Thread | `createAgentThread` / runtime-created on schedule | The execution stream: messages, tool calls, approvals, filesystem. |
+
+Schedule kinds (from `models::project_task_schedule::schedule_kind`):
+
+- `ONCE` — runs at `next_run_at`, then stops.
+- `INTERVAL` — runs every `interval_seconds`, anchored at `next_run_at`.
+
+## Recurring Task Recipe
+
+```
+# 1. Actor for the workflow (skip if you already have one)
+wacht api call createActor --body @actor.json
+
+# 2. Agent (executor)
+wacht api call createAiAgent --body @agent.json
+
+# 3. Project that pairs the actor + agent
+wacht api call createActorProjectFlat --param actor_id=<id> --body @project.json
+
+# 4. Board item carries the task prompt + schedule
+wacht api call createProjectTaskBoardItem \
+  --param project_id=<id> \
+  --body @board-item.json
+```
+
+`board-item.json`:
+
+```json
+{
+  "title": "…",
+  "description": "…the prompt the agent runs against…",
+  "schedule_kind": "INTERVAL",
+  "interval_seconds": 21600
+}
+```
+
+The runtime picks up the board item, opens a thread on its schedule, and runs the agent against the description. Use `schedule_kind: "ONCE"` with `next_run_at` for one-shot scheduled work.
+
+## Sharing an Agent Session
+
+The console's vanity agent UI is gated by a one-time session ticket.
+
+```
+wacht api call createBackendSessionTicket --body @ticket.json
+# → { "ticket": "<ticket>", "expires_at": <epoch> }
+```
+
+`ticket.json`:
+
+```json
+{ "ticket_type": "agent_access", "agent_ids": ["<agent_id>"], "actor_id": "<actor_id>" }
+```
+
+The response includes a fully-formed `url` the redeemer can open directly — no host stitching required:
+
+```json
+{ "ticket": "…", "expires_at": 1730000000, "url": "https://<frontend_host>/vanity/agents?ticket=…" }
+```
+
+`/session/tickets` issues four ticket types. Each redirects to a different vanity surface (shown for reference — use `response.url`, don't reassemble):
+
+| `ticket_type` | Vanity surface | Required fields |
+| --- | --- | --- |
+| `agent_access` | `/vanity/agents` | `agent_ids`, `actor_id` |
+| `impersonation` | `/sign-in?ticket=…` | `user_id` |
+| `api_auth_access` | `/vanity/api-auth` | `api_auth_app_slug` |
+| `webhook_app_access` | `/vanity/webhook` | `webhook_app_slug` |
+
+The same shape exists on the console router (`create_session_ticket`); bench-side code should use the backend variant (`createBackendSessionTicket`).
+
+### Per-user actor + ticket from a server route
+
+When a session is scoped to an authenticated end user, reuse an actor across visits — `external_key` is the natural anchor. Look up first, create if missing:
+
+```ts
+// app/api/agent-session/route.ts (Next.js)
+import { requireAuth } from '@wacht/nextjs/server';
+import { ai, sessions } from '@wacht/backend';
+
+const AGENT_ID = process.env.AGENT_ID!;
+
+export async function POST(request: Request) {
+  const auth = await requireAuth(request);
+  const externalKey = auth.userId!;
+
+  const { actor: existing } = await ai.lookupActor({
+    subject_type: 'user',
+    external_key: externalKey,
+  });
+  const actor =
+    existing ??
+    (await ai.createActor({
+      subject_type: 'user',
+      external_key: externalKey,
+      display_name: externalKey,
+    }));
+
+  const { url, expires_at } = await sessions.createSessionTicket({
+    ticket_type: 'agent_access',
+    agent_ids: [AGENT_ID],
+    actor_id: actor.id,
+  });
+
+  return Response.json({ url, expires_at });
+}
+```
+
+The default `@wacht/backend` client lazy-inits from `WACHT_API_KEY` — no `wachtClient()` plumbing needed on standard Node / Next.js servers.
+
+### `subject_type` conventions
+
+`subject_type` namespaces `external_key`. The pair `(subject_type, external_key)` uniquely identifies an actor inside a deployment; the field is a free-form `string` with no platform-side enum. Pick a value and stay consistent:
+
+| `subject_type` | When to use |
+| --- | --- |
+| `user` | Actor scoped to one end user. `external_key` is your user id. Most common. |
+| `service` | Background job, scheduled scan, or any non-user identity. |
+| `organization` | Actor that owns work on behalf of an organization. |
+| `workspace` | Actor at workspace scope. |
+
+Different `subject_type` values with the same `external_key` are distinct actors — don't switch the namespace mid-stream.
+
+## Composio (Virtual Tools)
+
+Composio toolkits (Reddit, Gmail, Slack, …) are enabled at the **deployment** level. Their tools surface to agents automatically at runtime — there is no `createAiTool` step for Virtual tools.
+
+```
+# 1. Enable the toolkit on the deployment (managed = Composio handles OAuth)
+wacht api call enableComposioApp --body @enable.json
+
+# 2. Confirm the toolkit's tools are available
+wacht api call listComposioTools --param toolkits=<toolkit_slug>
+```
+
+`enable.json`:
+
+```json
+{
+  "slug": "<toolkit_slug>",
+  "auth": { "type": "managed", "auth_scheme": "OAUTH2" }
+}
+```
+
+Do **not** call `createAiTool` with `tool_type: "Virtual"` — the platform rejects it with *"Virtual tools cannot be created directly — they are discovered at runtime"*.
+
+Each actor that the agent acts on behalf of must authorize the toolkit before the agent can call its tools. The first failed call returns an OAuth handshake URL pointing the actor at the Composio auth flow.
 
 ## Workflow
 

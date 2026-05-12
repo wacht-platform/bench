@@ -58,7 +58,7 @@ This project is configured for AI-assisted Wacht development.
 - Detected project shape: \`${frameworks}\`.
 - Suggested Wacht skills for this project: \`${skills}\`.
 - Active skill router: \`wacht\` (always start there). For CLI work specifically, use the \`wacht-bench-cli\` skill.
-- Install or update skills with \`wacht skills add\`.
+- Install or update skills with \`wacht skills install\`.
 
 ### Where to look (single source of truth)
 
@@ -115,7 +115,15 @@ async function upsertAgentsBlock(root: string, profile: ProjectProfile): Promise
   return agentsPath;
 }
 
-async function writeEnvTemplate(root: string, profile: ProjectProfile): Promise<string> {
+async function writeEnvTemplate(root: string, profile: ProjectProfile): Promise<string | null> {
+  // If the project already ships a `.env.local.example` / `.env.example` (typical for
+  // scaffolded starters), don't drop a second redundant file alongside it.
+  for (const existing of ['.env.local.example', '.env.example']) {
+    if (await pathExists(path.join(root, existing))) {
+      return null;
+    }
+  }
+
   const envPath = path.join(root, '.env.wacht.example');
   const frameworks = new Set(profile.frameworks);
   const isVite = frameworks.has('React Router') || frameworks.has('TanStack Router');
@@ -126,7 +134,8 @@ async function writeEnvTemplate(root: string, profile: ProjectProfile): Promise<
       : 'NEXT_PUBLIC_WACHT_PUBLISHABLE_KEY';
 
   const lines = [
-    '# Wacht SDK environment. Fill these from your Wacht deployment.',
+    '# Wacht SDK environment. Run `wacht env pull` to populate these automatically,',
+    '# or copy values from https://console.wacht.dev.',
     '',
     '# Client-safe publishable key. Encodes deployment + frontend host.',
     `${publishableKeyVar}=`,
@@ -153,7 +162,8 @@ export async function initProject(args: string[], ctx: CliContext): Promise<void
   log(ctx, '');
 
   if (!options.skipEnv) {
-    written.push(await writeEnvTemplate(root, profile));
+    const envPath = await writeEnvTemplate(root, profile);
+    if (envPath) written.push(envPath);
   }
 
   if (!options.skipAgents) {
@@ -168,9 +178,6 @@ export async function initProject(args: string[], ctx: CliContext): Promise<void
     log(ctx, '');
     log(ctx, section('Install Skills'));
     await installSkills({ yes: true });
-  } else {
-    log(ctx, '');
-    log(ctx, field('Skills', `run ${command('wacht skills install')} when you want to install/update the pack`));
   }
 
   if (ctx.json) {
@@ -189,6 +196,23 @@ export async function initProject(args: string[], ctx: CliContext): Promise<void
 
   log(ctx, '');
   log(ctx, success('Wacht Bench project bootstrap complete.'));
+}
+
+function printAgentBootstrapSteps(ctx: CliContext, opts: { starterDir?: string; installedSkills: boolean }): void {
+  log(ctx, '');
+  log(ctx, section('Next'));
+  const cd = opts.starterDir ? `cd ${opts.starterDir} && ` : '';
+  if (!opts.installedSkills) {
+    log(ctx, `  ${command('wacht skills install --agent claude-code --global --yes')}`);
+  }
+  log(ctx, `  ${command('wacht mcp install --client claude-code-user --yes')}`);
+  log(ctx, `  ${command('wacht login && wacht deployments select')}`);
+  log(ctx, `  ${command(`${cd}wacht env pull`)}`);
+  if (opts.starterDir) {
+    log(ctx, `  ${command(`${cd}pnpm install && pnpm dev`)}`);
+  }
+  log(ctx, '');
+  log(ctx, '(Restart your AI client after installing skills/MCP so they load.)');
 }
 
 // ─── Starter mode ───────────────────────────────────────────────────
@@ -279,7 +303,10 @@ export async function initStarter(options: StarterOptions, ctx: CliContext): Pro
 
   log(ctx, '');
   log(ctx, success(`Starter ready at ${path.relative(process.cwd(), absoluteTarget) || '.'}`));
-  log(ctx, `Next: ${command(`cd ${path.relative(process.cwd(), absoluteTarget) || '.'} && pnpm install && pnpm dev`)}`);
+  printAgentBootstrapSteps(ctx, {
+    starterDir: path.relative(process.cwd(), absoluteTarget) || '.',
+    installedSkills: options.install,
+  });
 }
 
 export function listStarters(): { framework: string; description: string; repo: string }[] {

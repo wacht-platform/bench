@@ -33,7 +33,8 @@ Required docs:
 | Protect API routes | `requireAuth(request)` or `auth.protect()` | `app/api/**/route.ts` |
 | Read auth in Server Component | `auth(await headers())` | Server Component |
 | Branch on optional auth | `getAuth(request)` | Route handler |
-| Use management API | `wachtClient()` or `createWachtServerClient()` | Server-only module |
+| Call platform API from server route | `import { ai, users, … } from '@wacht/backend'` — the default client lazy-inits from `WACHT_API_KEY`. No `wachtClient()` plumbing needed. | `app/api/**/route.ts` |
+| Override SDK client config | `import { initClient } from '@wacht/backend'` once (e.g. for non-default base URL or custom fetch) | server-only module |
 
 ## Mental Model
 

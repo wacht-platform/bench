@@ -123,6 +123,50 @@ wacht api describe getWebhookApps
 wacht api call getWebhookApps --param limit=20 --json
 ```
 
+### Schedule a recurring agent task
+
+Use this when the work is "do X every N seconds against an agent". The agent record is the executor; the task prompt + cadence live on a board item under an actor project. See `wacht-agents` for the runtime model.
+
+```bash
+# Pre-reqs: agent and actor already exist
+wacht api call createActorProjectFlat --param actor_id=<actor_id> \
+  --body '{"name":"ICP Scout","agent_id":<agent_id>}'
+
+wacht api call createProjectTaskBoardItem --param project_id=<project_id> \
+  --body @board-item.json
+```
+
+`board-item.json` minimal shape:
+
+```json
+{
+  "title": "Watch competitor mentions",
+  "description": "Search Reddit for mentions of <competitor> in the last 6h and surface comments where a user signals our ICP.",
+  "schedule_kind": "INTERVAL",
+  "interval_seconds": 21600
+}
+```
+
+### Share a vanity URL (agent chat, impersonation, key management, webhook management)
+
+`POST /session/tickets` issues four ticket types. Each one redirects to a different hosted vanity page. The body shape is the same; the required fields and URL depend on `ticket_type`.
+
+```bash
+wacht api call createBackendSessionTicket --body @ticket.json
+# → { "ticket": "<ticket>", "expires_at": <epoch>, "url": "https://<host>/vanity/…?ticket=…" }
+```
+
+The response includes a fully-formed `url` the redeemer can open directly — don't reassemble it from host + path. The vanity surface per ticket type:
+
+| `ticket_type` | Vanity surface | Required body fields |
+| --- | --- | --- |
+| `agent_access` | `/vanity/agents` | `agent_ids`, `actor_id` |
+| `impersonation` | `/sign-in?ticket=…` | `user_id` |
+| `api_auth_access` | `/vanity/api-auth` | `api_auth_app_slug` |
+| `webhook_app_access` | `/vanity/webhook` | `webhook_app_slug` |
+
+Tickets are one-time-redeemable; pass `expires_in` (seconds) to tighten the window.
+
 ## Validation
 
 Before reporting a CLI-driven task complete:

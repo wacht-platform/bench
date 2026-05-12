@@ -28,8 +28,9 @@ Required docs:
 
 | Task | Helper or pattern |
 | --- | --- |
-| Global client | `initClient()` + resource exports |
-| Explicit client | `new WachtClient({ apiKey })` |
+| Call any platform API | `import { ai, users, … } from '@wacht/backend'; await ai.createActor(req)` — the global client lazy-inits from `WACHT_API_KEY` |
+| Override client config | `initClient({ apiKey, baseUrl })` once at startup |
+| Multiple deployments / explicit client | `new WachtClient({ apiKey })`, pass as 2nd arg to functions |
 | Request auth | `authenticateRequest(request, options?)` |
 | Optional auth | `getAuth(request, options?)` |
 | Serialized auth | `authFromHeaders(headers, options?)` |
@@ -50,15 +51,26 @@ Required docs:
 
 ### Client Setup
 
+The default client lazy-initializes from `WACHT_API_KEY` (and optional `WACHT_BACKEND_API_URL`) the first time any SDK function runs. No setup call is needed in the common case:
+
+```ts
+import { users } from '@wacht/backend';
+
+const response = await users.listUsers({ limit: 20 });
+```
+
+Call `initClient()` only when you need to override the env defaults (e.g. injecting a custom `fetch` for Cloudflare Workers, or pointing at a non-default base URL):
+
 ```ts
 import { initClient, users } from '@wacht/backend';
 
 initClient({
-  apiKey: process.env.WACHT_API_KEY!,
-  baseUrl: process.env.WACHT_BACKEND_API_URL,
+  apiKey: env.WACHT_API_KEY,
+  baseUrl: env.WACHT_BACKEND_API_URL,
+  fetch: env.fetch.bind(env),
 });
 
-const response = await users.listUsers({ limit: 20 });
+await users.listUsers({ limit: 20 });
 ```
 
 ### Request Auth
@@ -92,9 +104,9 @@ if (!claims) {
 
 | Situation | Use |
 | --- | --- |
-| Framework adapter already provides server client | Keep adapter helper; do not introduce a second raw client. |
-| Long-running Node service or job | Explicit `WachtClient` or `initClient()`. |
-| Request-isolated worker/serverless handler | Construct client from env/bindings or use a small per-request wrapper. |
+| Standard Node / Next.js / Hono / Bun server with `WACHT_API_KEY` set | Just import functions — default client lazy-inits. |
+| Workers / Deno / runtime without `process.env` | `initClient({ apiKey, fetch })` once with runtime bindings. |
+| Multiple deployments in one process | Construct named `WachtClient` instances and pass explicitly. |
 | Browser session protected backend route | `authenticateRequest()` or `getAuth()`. |
 | Customer API key protected endpoint | Gateway authorization, not session auth. |
 | Webhook receiver | Signature verification before JSON parsing/trust. |
