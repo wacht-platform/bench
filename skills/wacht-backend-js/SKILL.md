@@ -51,7 +51,7 @@ Required docs:
 
 ### Client Setup
 
-The default client lazy-initializes from `WACHT_API_KEY` (and optional `WACHT_BACKEND_API_URL`) the first time any SDK function runs. No setup call is needed in the common case:
+The default client lazy-initializes from `WACHT_API_KEY` and uses `https://api.wacht.dev` the first time any SDK function runs. No setup call is needed in the common case:
 
 ```ts
 import { users } from '@wacht/backend';
@@ -59,19 +59,20 @@ import { users } from '@wacht/backend';
 const response = await users.listUsers({ limit: 20 });
 ```
 
-Call `initClient()` only when you need to override the env defaults (e.g. injecting a custom `fetch` for Cloudflare Workers, or pointing at a non-default base URL):
+Call `initClient()` only when you need to inject runtime-specific options such as a custom `fetch` for Cloudflare Workers:
 
 ```ts
 import { initClient, users } from '@wacht/backend';
 
 initClient({
   apiKey: env.WACHT_API_KEY,
-  baseUrl: env.WACHT_BACKEND_API_URL,
   fetch: env.fetch.bind(env),
 });
 
 await users.listUsers({ limit: 20 });
 ```
+
+Do not set `WACHT_BACKEND_API_URL` from a deployment `backend_host`/`fapi.trywacht.xyz` value. That host is for deployment frontend/runtime traffic, not the backend SDK API.
 
 ### Request Auth
 

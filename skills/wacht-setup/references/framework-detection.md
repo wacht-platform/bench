@@ -50,10 +50,6 @@ Server-only API key:
 WACHT_API_KEY=sk_live_xxx
 ```
 
-Backend URL override, when needed:
-
-```bash
-WACHT_BACKEND_API_URL=https://...
-```
+Do not add `WACHT_BACKEND_API_URL` for normal setup. The backend SDK defaults to `https://api.wacht.dev`; deployment `backend_host`/`fapi.trywacht.xyz` is not the backend SDK API URL.
 
 Never use a secret key in a public env variable.

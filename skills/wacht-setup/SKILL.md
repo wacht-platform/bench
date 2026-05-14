@@ -107,8 +107,9 @@ Required env:
 
 ```bash
 WACHT_API_KEY=sk_test_…                        # sk_live_… on production deployments
-WACHT_BACKEND_API_URL=https://...
 ```
+
+Do not add `WACHT_BACKEND_API_URL` for normal setup. The backend SDK defaults to `https://api.wacht.dev`; deployment `backend_host`/`fapi.trywacht.xyz` is not the backend SDK API URL.
 
 ### Rust
 

@@ -54,6 +54,14 @@ Required docs:
 - Cite the Wacht docs pages used when explaining important choices.
 - Run the validation commands from the specialized skill before finishing.
 
+## Source of Truth for Customer-Facing Code
+
+When the code you write will be read or run by a customer (their app, their `.env`, demo material, hand-off snippets, blog/launch content), the **skill text and Wacht Docs MCP are the source of truth**. Source-code grep is for internal/contributor work only.
+
+Why this matters: the SDK source exports advanced/internal knobs as normal-looking public options. Reading the source and pattern-matching "public option = customer env var" leaks plumbing into customer DX. The skills and docs are the curated public surface — anything not mentioned there should stay out of customer-facing files (`.env.example`, README, integration code).
+
+If a knob is missing from the skill but you think a customer needs it, that is a signal to ask the user — not a signal to invent the env var.
+
 ## Cross-Skill Safety Rules
 
 | Risk | Rule |
@@ -62,4 +70,5 @@ Required docs:
 | Client-only auth | Client auth state is UX only; protected reads and mutations need server enforcement. |
 | Tenant leakage | Organization/workspace scoped features must enforce tenancy server-side. |
 | Stale docs | Use Wacht Docs MCP or local checked-in docs before relying on remembered SDK behavior. |
+| Source-grep bias | For customer-facing code, skills + Docs MCP only. Do not grep `wacht/node/src`, `wacht/react/src`, etc. as a primary reference. |
 | Over-editing | Make the smallest integration change that satisfies the user request. |
