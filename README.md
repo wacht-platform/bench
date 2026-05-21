@@ -21,14 +21,14 @@ npx skills add wacht-platform/bench --skill wacht-nextjs-patterns
 The CLI is separate. Install globally with whatever package manager you use:
 
 ```bash
-npm i -g @wacht/bench
+npm i -g @wacht/bench@latest
 wacht --version
 ```
 
 Or run it without installing:
 
 ```bash
-npx @wacht/bench init
+npx @wacht/bench@latest init
 ```
 
 ## What's in the pack

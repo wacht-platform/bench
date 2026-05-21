@@ -20,9 +20,15 @@ Use Wacht Docs MCP to read current agent guides, model overrides, hooks, approva
 Required docs:
 
 - `/guides/agents`
+- `/guides/agents/multi-agent`
 - `/guides/agents/model-overrides`
 - `/guides/agents/hooks`
 - `/guides/agents/approval-policy`
+- `/guides/tasks`
+- `/guides/tasks/workspace-and-artifacts`
+- `/guides/tasks/deliverables`
+- `/guides/tasks/file-uploads`
+- `/guides/tasks/realtime-ui`
 - `/sdks/rust/ai-runtime`
 
 ## Quick Reference
@@ -38,6 +44,12 @@ Required docs:
 | Recurring or scheduled agent work | project task board item with `schedule_kind` |
 | Share an agent chat URL with a teammate or end user | backend session ticket + vanity URL |
 | Tool call auditability | execution/tool event logs |
+| Multi-stage work with different models per stage | coordinator agent + specialist executor lanes with `capability_tags` |
+| User uploads a file with a task | multipart `createProjectTaskBoardItemWithAttachments` (Node) / `create_board_item_with_attachments` (Rust) |
+| User attaches a file to a comment | multipart on the comment endpoint; agent reads it at `/task/uploads/...` |
+| Surface task output to your UI | read `board_item.deliverables[]` — structured `{result_summary, artifacts, findings, cautions, next}` per completion |
+| Agent needs to ask the user something free-form | `ask_user`; user answers with `freeform_text` (or structured `answers`) |
+| Agent writes files for the user to download | write to `/task/artifacts/` from inside the agent sandbox; surface via deliverables |
 
 Read `references/runtime-concept-map.md` before changing agent execution behavior, approvals, hooks, MCP tools, or skill bundle logic.
 
@@ -88,6 +100,49 @@ wacht api call createProjectTaskBoardItem \
 ```
 
 The runtime picks up the board item, opens a thread on its schedule, and runs the agent against the description. Use `schedule_kind: "ONCE"` with `next_run_at` for one-shot scheduled work.
+
+## Task Workspace, Artifacts, Deliverables
+
+Every board item gets a private `/task/` filesystem inside the agent sandbox:
+
+- `/task/artifacts/` — files the executor writes as deliverables. Validated to exist when a task completes.
+- `/task/uploads/` — files uploaded with the task (at create time, on update, or via a comment).
+- `/task/JOURNAL.md` — auto-appended structured handoff entries, one per completion.
+
+When the coordinator marks a task `completed`, the runtime appends an entry to `board_item.deliverables[]`. Each entry has `at`, `assignment_id`, `by_agent_name`, `result_summary`, `artifacts[]`, plus optional `findings`, `cautions`, `next`. Render this in your UI; don't render the journal — it's the agent's memory, not the user's view.
+
+To read deliverables from the frontend: `useProjectTaskBoardItem(projectId, taskId)`. The `item.deliverables` array updates live as completions land.
+
+## File Uploads
+
+Three multipart endpoints accept `attachments` (form field):
+
+- `POST /ai/actor-projects/{project_id}/board/items` — files at task creation
+- `POST /ai/actor-projects/{project_id}/board/items/{item_id}/update` — files added later
+- `POST /ai/actor-projects/{project_id}/board/items/{item_id}/comments` — files on a user comment
+
+Files land in S3 under the task workspace, surfaced to the agent at `/task/uploads/<id>_<safe-name>`. Attachment metadata is merged into `metadata.attachments`. Per-file cap: 64 MB.
+
+Node SDK methods: `createProjectTaskBoardItemWithAttachments`, `updateProjectTaskBoardItemWithAttachments`, `createProjectTaskBoardItemCommentWithAttachments`. Rust SDK: `client.ai().actor_projects().create_board_item_with_attachments(...)` and siblings. The JSON-only methods stay backward compatible.
+
+There is no client-writable filesystem endpoint. Agents write to `/task/`; clients read only.
+
+## Multi-Agent Orchestration
+
+Use when stages need different models, tools, or prompts. The pattern: one coordinator agent + N specialist agents, each in its own thread, tagged with `capability_tags`. The coordinator decides which lane runs next based on board state and prior `deliverables`. Coordinators never call execution tools; executors never route. The status machine enforces this.
+
+Don't reach for multi-agent if one agent can do the work — coordination overhead can cost more than just running a stronger model on a single agent.
+
+Each lane reports back through the structured handoff (`findings`/`cautions`/`next`). The journal tail (last 60 lines) is auto-included in the coordinator's next prompt.
+
+## ask_user and Pending Question
+
+When an agent calls `ask_user`, the board item gets a `pending_question` and status flips to `needs_clarification`. Your UI renders the question; the user answers via `answerProjectTaskBoardItemQuestion` with one of:
+
+- Structured `answers: [{question_id, value}]`
+- Or `freeform_text: "..."` (up to 4000 chars; mutually exclusive with `answers`)
+
+Both flow into `ConversationContent::ClarificationResponse` on the thread. The agent resumes on the next iteration with the user's reply in context.
 
 ## Sharing an Agent Session
 
