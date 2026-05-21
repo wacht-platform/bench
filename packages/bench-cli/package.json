@@ -1,6 +1,6 @@
 {
     "name": "@wacht/bench",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "CLI for Wacht Bench, the AI development workbench for Wacht.",
     "type": "module",
     "bin": {
