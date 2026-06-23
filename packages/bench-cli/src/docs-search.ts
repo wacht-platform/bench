@@ -1,5 +1,6 @@
+import { httpFetch } from './http.js';
 import type { CliContext } from './types.js';
-import { field, log, printBannerFor, printError, printJson, section } from './ui.js';
+import { field, log, muted, printBannerFor, printError, printJson, section } from './ui.js';
 
 const DEFAULT_DOCS_URL = 'https://wacht.dev/docs';
 
@@ -24,7 +25,7 @@ export async function docsSearch(ctx: CliContext, options: DocsSearchOptions): P
 
   let response: Response;
   try {
-    response = await fetch(endpoint, { headers: { Accept: 'application/json' } });
+    response = await httpFetch(endpoint, { headers: { Accept: 'application/json' } });
   } catch (error) {
     printError(error);
     process.exitCode = 1;
@@ -58,7 +59,7 @@ export async function docsSearch(ctx: CliContext, options: DocsSearchOptions): P
   const orderedPages = Array.from(pages.values());
   const sliced = options.limit ? orderedPages.slice(0, options.limit) : orderedPages;
 
-  if (options.json) {
+  if (ctx.json || options.json) {
     printJson({
       ok: true,
       query: options.query,
@@ -100,4 +101,81 @@ export async function docsSearch(ctx: CliContext, options: DocsSearchOptions): P
     }
     log(ctx, '');
   }
+
+  if (!ctx.quiet) {
+    log(ctx, muted('Read a full page with `wacht docs get <path>` (e.g. `wacht docs get /sdks/nextjs/middleware`).'));
+  }
+}
+
+export interface DocsGetOptions {
+  path: string;
+  baseUrl?: string;
+  json?: boolean;
+}
+
+/**
+ * Normalize whatever the caller passes (a docs path, a `/docs/...` path, a full
+ * URL, or one that already ends in `content.md`) down to the page's slug segments.
+ */
+function normalizeDocPath(input: string): string {
+  let value = input.trim();
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      value = new URL(value).pathname;
+    } catch {
+      // fall through and treat it as a plain path
+    }
+  }
+  value = value.replace(/^\/+/, '').replace(/\/+$/, '');
+  value = value.replace(/^docs\//, '');
+  // tolerate a pasted markdown URL: .../sdks/node/content.md → sdks/node
+  value = value.replace(/\/content\.md$/i, '').replace(/\.mdx?$/i, '');
+  return value;
+}
+
+export async function docsGet(ctx: CliContext, options: DocsGetOptions): Promise<void> {
+  const baseUrl = (options.baseUrl ?? process.env.WACHT_DOCS_URL ?? DEFAULT_DOCS_URL).replace(/\/+$/, '');
+  const slug = normalizeDocPath(options.path);
+  if (!slug) {
+    printError(new Error('Pass a docs path, for example `wacht docs get /sdks/nextjs/middleware`.'));
+    process.exitCode = 1;
+    return;
+  }
+
+  const docPath = `/${slug}`;
+  const url = `${baseUrl}/llms.mdx/docs/${slug}/content.md`;
+
+  let response: Response;
+  try {
+    response = await httpFetch(url, { headers: { Accept: 'text/markdown' } });
+  } catch (error) {
+    printError(error);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (response.status === 404) {
+    printError(new Error(`No docs page at ${docPath}. Run \`wacht docs search <terms>\` to find the right path.`));
+    process.exitCode = 1;
+    return;
+  }
+  if (!response.ok) {
+    printError(new Error(`docs get failed: ${response.status} ${response.statusText} (${url})`));
+    process.exitCode = 1;
+    return;
+  }
+
+  const markdown = (await response.text()).trim();
+
+  if (ctx.json || options.json) {
+    printJson({ ok: true, path: docPath, url, markdown });
+    return;
+  }
+
+  if (!ctx.quiet) {
+    log(ctx, muted(`# source: ${baseUrl}${docPath}`));
+    log(ctx, '');
+  }
+  // The page body is the deliverable here — print it raw so it's pipeable.
+  console.log(markdown);
 }

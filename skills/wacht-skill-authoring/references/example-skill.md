@@ -25,8 +25,8 @@ Use Wacht Docs MCP before coding. Fetch the relevant pages when implementation d
 Required docs:
 
 - `/guides/docs-mcp`
-- `/sdks/js/backend`
-- `/sdks/js/nextjs`
+- `/sdks/node`
+- `/sdks/nextjs`
 
 ## Workflow
 

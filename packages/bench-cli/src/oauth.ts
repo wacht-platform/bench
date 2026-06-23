@@ -10,6 +10,7 @@ import {
   REDIRECT_URI,
 } from './config.js';
 import { isOAuthTokenResponse } from './guards.js';
+import { httpFetch } from './http.js';
 import { startOAuthCallbackServer } from './oauth-callback.js';
 import { codeChallengeFor, randomToken } from './pkce.js';
 import { clearAuth, readAuth, writeAuth } from './auth-store.js';
@@ -201,17 +202,21 @@ export async function logout(ctx: CliContext): Promise<void> {
   const auth = await readAuth();
   if (auth?.refresh_token) {
     try {
-      await fetch(OAUTH_REVOCATION_URL, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/x-www-form-urlencoded',
+      await httpFetch(
+        OAUTH_REVOCATION_URL,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            token: auth.refresh_token,
+            token_type_hint: 'refresh_token',
+            client_id: OAUTH_CLIENT_ID,
+          }),
         },
-        body: new URLSearchParams({
-          token: auth.refresh_token,
-          token_type_hint: 'refresh_token',
-          client_id: OAUTH_CLIENT_ID,
-        }),
-      });
+        { timeoutMs: 5_000 },
+      );
     } catch {
       // Local logout should still succeed if the network is unavailable.
     }

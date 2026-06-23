@@ -65,7 +65,7 @@ This project is configured for AI-assisted Wacht development.
 | Need | Source |
 | --- | --- |
 | Framework wiring patterns (provider, middleware, loaders) | Skills: \`${skills}\`. Always load before editing SDK code — never freelance the wiring. |
-| Endpoint contracts, request/response shapes, errors | Wacht Docs MCP at \`${MCP_URL}\`. Required before calling any Machine API operation by hand. |
+| Endpoint contracts, request/response shapes, errors | Wacht Docs MCP at \`${MCP_URL}\` — or, with no MCP, \`wacht docs search "<terms>"\` then \`wacht docs get <path>\`. Ground here before calling any Machine API operation by hand. |
 | Live deployment context (project id, deployment id, hosts) | \`wacht deployments current\` — re-run every time, never cache. |
 | Available CLI surface | \`wacht --help\` and \`wacht <command> --help\`. |
 | Any Machine API operation by name | \`wacht api ls --search <text>\` → \`wacht api describe <op>\` → \`wacht api call <op>\`. |
@@ -79,6 +79,7 @@ This project is configured for AI-assisted Wacht development.
 | Manage users | \`wacht users list\` · \`wacht users get <id>\` · \`wacht users create --field …\` |
 | Manage orgs / workspaces | \`wacht orgs list\` · \`wacht workspaces list --org <id>\` |
 | Pull / diff / apply config | \`wacht config pull\` · \`wacht config diff\` · \`wacht config apply --yes\` |
+| Read Wacht docs (no MCP needed) | \`wacht docs search "<terms>"\` · \`wacht docs get <path>\` |
 | Configure Docs MCP across clients | \`wacht mcp install\` (interactive picker) · \`wacht mcp list\` |
 
 ### Rules for agent loops

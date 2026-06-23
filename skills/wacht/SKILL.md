@@ -15,13 +15,12 @@ Do not activate for unrelated auth providers unless the task is explicitly about
 
 ## First Step
 
-Before coding, use Wacht Docs MCP for current Wacht SDK, API, and guide details. If MCP is unavailable, say that exact-doc grounding was unavailable and continue from installed package source and local docs.
+Before coding, ground in current Wacht docs. There are two equivalent ways in — use whichever is available; you do **not** need MCP to ground:
 
-Recommended lookup flow:
+- **Wacht Docs MCP** (when wired into your client): `docs_graph_view` for broad topics → `search_docs` for targeted lookup → `get_doc` for exact pages before deciding.
+- **The `wacht` CLI** (always available, no MCP setup): `wacht docs search "<terms>"` to find pages, then `wacht docs get <path>` to read a full page's Markdown (e.g. `wacht docs get /sdks/nextjs/middleware`). Add `--json` inside an agent loop.
 
-1. Use `docs_graph_view` for broad topics.
-2. Use `search_docs` for targeted lookup.
-3. Use `get_doc` for exact pages before making implementation decisions.
+If MCP isn't installed, reach for `wacht docs ...` — don't code Wacht APIs from memory. Only fall back to installed package source if both are unreachable, and say so.
 
 Required docs:
 
@@ -69,6 +68,6 @@ If a knob is missing from the skill but you think a customer needs it, that is a
 | Secret leakage | Never put `WACHT_API_KEY` or backend keys in client code or public env names. |
 | Client-only auth | Client auth state is UX only; protected reads and mutations need server enforcement. |
 | Tenant leakage | Organization/workspace scoped features must enforce tenancy server-side. |
-| Stale docs | Use Wacht Docs MCP or local checked-in docs before relying on remembered SDK behavior. |
+| Stale docs | Ground in Wacht Docs MCP — or `wacht docs search` / `wacht docs get <path>` when MCP isn't wired up — before relying on remembered SDK behavior. |
 | Source-grep bias | For customer-facing code, skills + Docs MCP only. Do not grep `wacht/node/src`, `wacht/react/src`, etc. as a primary reference. |
 | Over-editing | Make the smallest integration change that satisfies the user request. |

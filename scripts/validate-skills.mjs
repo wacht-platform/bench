@@ -58,6 +58,37 @@ function extractReferenceLinks(raw) {
   return [...raw.matchAll(/`(references\/[^`]+)`/g)].map((item) => item[1]);
 }
 
+// Anti-hallucination content guards. Each rule encodes a *class* of known-wrong
+// claim that an agent would copy verbatim into customer code, so a regression
+// fails validation instead of silently shipping. Keep these precise — only add a
+// rule when the wrong form is unambiguous (both wire values verified against source).
+const FORBIDDEN_CONTENT = [
+  {
+    test: /schedule_kind["'`]?\s*[:=]\s*["'`](?:ONCE|INTERVAL)["'`]/,
+    message: 'schedule_kind wire value must be lowercase ("once" / "interval"); uppercase is rejected with HTTP 400',
+  },
+  {
+    test: /\/sdks\/js\//,
+    message: 'docs path /sdks/js/... does not exist — use /sdks/node or /sdks/nextjs',
+  },
+];
+
+function lintContent(label, text) {
+  return FORBIDDEN_CONTENT.filter((rule) => rule.test.test(text)).map((rule) => `${label}: ${rule.message}`);
+}
+
+async function skillTexts(skillName, raw) {
+  const texts = [['SKILL.md', raw]];
+  const refDir = path.join(skillsDir, skillName, 'references');
+  if (await exists(refDir)) {
+    const refFiles = (await readdir(refDir)).filter((file) => file.endsWith('.md'));
+    for (const file of refFiles) {
+      texts.push([`references/${file}`, await readFile(path.join(refDir, file), 'utf8')]);
+    }
+  }
+  return texts;
+}
+
 for (const skillName of skillDirs) {
   if (!namePattern.test(skillName)) {
     failures.push(`${skillName}: directory name must be lowercase hyphen-case`);
@@ -117,6 +148,10 @@ for (const skillName of skillDirs) {
     if (!(await exists(refFile))) {
       failures.push(`${skillName}: referenced file does not exist: ${ref}`);
     }
+  }
+
+  for (const [label, text] of await skillTexts(skillName, raw)) {
+    failures.push(...lintContent(`${skillName}/${label}`, text));
   }
 
   if (/wacht\s*=\s*"0\.\d+\.\d/.test(raw) || /version\s*=\s*"0\.\d+\.\d/.test(raw)) {

@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { MACHINE_API_URL } from './config.js';
 import { readBenchContext } from './context-store.js';
+import { httpFetch } from './http.js';
 import { getValidAuth } from './oauth.js';
 import { promptChoice, promptOptionalList, promptText } from './prompts.js';
 import type { CliContext } from './types.js';
@@ -43,7 +44,7 @@ export async function machineRequest(pathname: string, options: RequestInit = {}
   headers.set('authorization', `Bearer ${auth.access_token}`);
   headers.set('accept', 'application/json');
 
-  const response = await fetch(url, {
+  const response = await httpFetch(url, {
     ...options,
     headers,
   });

@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { AUTH_DIR, OPENAPI_CACHE_FILE, PLATFORM_OPENAPI_URL } from './config.js';
 import { readBenchContext } from './context-store.js';
+import { httpFetch } from './http.js';
 import { entries, requestBody, type ApiOptions, machineRequest } from './machine-api.js';
 import { validateBody } from './openapi-validate.js';
 import type { CliContext } from './types.js';
@@ -115,7 +116,7 @@ async function readCache(): Promise<LoadedSpec | null> {
 }
 
 async function fetchSpec(): Promise<OpenApiSpec> {
-  const response = await fetch(PLATFORM_OPENAPI_URL);
+  const response = await httpFetch(PLATFORM_OPENAPI_URL);
   if (!response.ok) {
     throw new Error(`OpenAPI fetch failed: HTTP ${response.status}`);
   }

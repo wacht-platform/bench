@@ -20,8 +20,8 @@ Use Wacht Docs MCP to confirm the current SDK behavior, API contracts, and expec
 Required docs:
 
 - `/guides/integration-playbooks/fullstack-auth-lifecycle-react-rust`
-- `/guides/api-auth/overview`
-- `/guides/webhook-apps/overview`
+- `/guides/api-auth`
+- `/guides/webhook-apps`
 - `/guides/agents/approval-policy`
 
 ## Decision Tree

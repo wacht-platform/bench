@@ -19,7 +19,7 @@ Use Wacht Docs MCP to read current API Auth guides, backend SDK methods, and API
 
 Required docs:
 
-- `/guides/api-auth/overview`
+- `/guides/api-auth`
 - `/guides/api-auth/vanity-pages-implementation`
 - `/guides/api-auth/custom-hook-flow-implementation`
 - backend SDK/API reference for API Auth and API Keys

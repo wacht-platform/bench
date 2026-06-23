@@ -65,10 +65,12 @@ Wacht agents live inside an `actor → project → (board items + threads)` tree
 | Board item (task) | `createProjectTaskBoardItem` | The actual task: `title`, `description` (the prompt), `schedule_kind`, `next_run_at`, `interval_seconds`, and optional `mounts`. |
 | Thread | `createAgentThread` / runtime-created on schedule | The execution stream: messages, tool calls, approvals, filesystem. |
 
-Schedule kinds (from `models::project_task_schedule::schedule_kind`):
+Schedule kinds (from `models::project_task_schedule::schedule_kind`) — wire values are **lowercase**. The platform `.trim()`s but does not case-fold, so `"ONCE"` / `"INTERVAL"` are rejected with a 400.
 
-- `ONCE` — runs at `next_run_at`, then stops.
-- `INTERVAL` — runs every `interval_seconds`, anchored at `next_run_at`.
+- `"once"` — runs once at `next_run_at`, then stops.
+- `"interval"` — runs every `interval_seconds`, first fire anchored at `next_run_at`.
+
+`next_run_at` is **required for both kinds**: a UTC RFC3339 timestamp (e.g. `"2026-01-15T18:00:00Z"`). `interval_seconds` (a number) is required for `"interval"`. Omitting `next_run_at` also 400s.
 
 ## Recurring Task Recipe
 
@@ -94,12 +96,13 @@ wacht api call createProjectTaskBoardItem \
 {
   "title": "…",
   "description": "…the prompt the agent runs against…",
-  "schedule_kind": "INTERVAL",
+  "schedule_kind": "interval",
+  "next_run_at": "2026-01-15T18:00:00Z",
   "interval_seconds": 21600
 }
 ```
 
-The runtime picks up the board item, opens a thread on its schedule, and runs the agent against the description. Use `schedule_kind: "ONCE"` with `next_run_at` for one-shot scheduled work.
+The runtime picks up the board item, opens a thread on its schedule, and runs the agent against the description. For one-shot scheduled work use `"schedule_kind": "once"` with a `next_run_at` and no `interval_seconds`.
 
 ## Task Workspace, Artifacts, Deliverables
 

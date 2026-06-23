@@ -19,11 +19,11 @@ Use Wacht Docs MCP to read current webhook app guides, deployment event docs, ba
 
 Required docs:
 
-- `/guides/webhook-apps/overview`
+- `/guides/webhook-apps`
 - `/guides/webhook-apps/vanity-pages-implementation`
 - `/guides/webhook-apps/custom-hook-flow-implementation`
 - `/guides/webhook-apps/deliveries-replay-and-observability`
-- `/guides/deployment-events/use-webhooks-to-keep-backend-in-sync`
+- `/guides/deployment-events`
 
 ## Mental Model
 

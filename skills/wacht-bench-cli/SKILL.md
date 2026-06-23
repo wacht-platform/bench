@@ -23,7 +23,7 @@ Do **not** activate to wire app code — that's `wacht-setup` and the framework-
 
 ## Grounding
 
-Before running anything that reads or changes data, use Wacht Docs MCP for current command shapes and the Machine API surface.
+Before running anything that reads or changes data, ground in current command shapes and the Machine API surface. Use Wacht Docs MCP if it's wired in — but the CLI is also its own docs reader, so **no MCP is required**: `wacht docs search "<terms>"` finds pages and `wacht docs get <path>` prints a full page's Markdown (e.g. `wacht docs get /sdks/node`). Reach for these before constructing a Machine API call from memory.
 
 Required docs:
 
@@ -42,6 +42,7 @@ Required docs:
 | Bootstrap a new project | `wacht init --starter nextjs` (or `react-router`, `tanstack`) |
 | Add Wacht to current project | `wacht init` |
 | Mint deployment credentials + write `.env.local` | `wacht env pull` (each call rotates the backend key) |
+| Read the docs without MCP | `wacht docs search "<terms>"` to find pages · `wacht docs get /sdks/node` to print a full page as Markdown |
 | Install Docs MCP into AI clients | `wacht mcp install` (interactive) · `wacht mcp install --client cursor-user,codex --yes` · `wacht mcp list` to inspect |
 | List users in a deployment | `wacht users list --search "@acme.com"` |
 | Inspect a user | `wacht users get <user_id>` |
@@ -71,6 +72,15 @@ Required docs:
 7. **Don't write secrets.** `wacht config pull` deliberately omits credentials and provider secrets. Never echo or commit a real `WACHT_API_KEY`, OAuth client secret, or webhook signing key.
 
 ## Common Recipes
+
+### Ground in the docs without MCP
+
+```bash
+wacht docs search "webhook signature verification"   # find the right page(s)
+wacht docs get /sdks/node/server-auth                # print the full page as Markdown
+```
+
+`wacht docs get` takes a docs path — the kind listed under each skill's **Required docs**. Add `--json` to capture `{ path, url, markdown }` in an agent loop. This works with zero MCP setup, so it's the grounding fallback when Docs MCP isn't installed.
 
 ### Sign in and pick a deployment
 
@@ -119,8 +129,8 @@ wacht config apply --file wacht.config.json \
 
 ```bash
 wacht api ls --search webhooks
-wacht api describe getWebhookApps
-wacht api call getWebhookApps --param limit=20 --json
+wacht api describe listWebhookApps
+wacht api call listWebhookApps --param limit=20 --json
 ```
 
 ### Schedule a recurring agent task
@@ -142,7 +152,8 @@ wacht api call createProjectTaskBoardItem --param project_id=<project_id> \
 {
   "title": "Watch competitor mentions",
   "description": "Search Reddit for mentions of <competitor> in the last 6h and surface comments where a user signals our ICP.",
-  "schedule_kind": "INTERVAL",
+  "schedule_kind": "interval",
+  "next_run_at": "2026-01-15T18:00:00Z",
   "interval_seconds": 21600
 }
 ```

@@ -19,7 +19,7 @@ Use Wacht Docs MCP to read current notification guides, SDK hooks, components, a
 
 Required docs:
 
-- `/guides/notifications/overview-scope-design`
+- `/guides/notifications`
 - `/guides/notifications/backend-sending-patterns`
 - `/guides/notifications/frontend-inbox-with-hooks`
 - `/guides/notifications/realtime-stream-handling`

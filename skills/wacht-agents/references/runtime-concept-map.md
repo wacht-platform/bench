@@ -11,7 +11,7 @@ Runtime objects form an `actor → project → (board items + threads)` tree. Th
 | Actor | "As whom" the agent acts. `subject_type` + `external_key` identify a Wacht user or service identity. |
 | Agent definition | Model, tools, knowledge bases, approvals, hooks, and skill bundle configuration. No task prompt — agents are reusable executors. |
 | Actor project | A unit of work pairing an actor with an agent. Holds a board (planned tasks) and threads (runtime streams). |
-| Board item (task) | The task definition: `title`, `description` (the prompt the agent runs), `schedule_kind` (`ONCE` / `INTERVAL`), `next_run_at`, `interval_seconds`, optional file `mounts`. |
+| Board item (task) | The task definition: `title`, `description` (the prompt the agent runs), `schedule_kind` (lowercase `"once"` / `"interval"`), `next_run_at` (RFC3339 UTC, required for both kinds), `interval_seconds`, optional file `mounts`. |
 | Conversation/thread | User-visible work stream and persisted messages/events. Auto-created when a scheduled board item fires; user-created via `createAgentThread` for ad-hoc work. |
 | Execution run | One concrete agent run inside a thread, with tool calls, approvals, status, and output. |
 | Tool catalog | Internal, API, CodeRunner, PlatformEvent, MCP, and Virtual (third-party via Composio) tools. |

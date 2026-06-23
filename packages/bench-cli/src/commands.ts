@@ -30,7 +30,7 @@ import {
   selectDeployment,
 } from './deployment-context.js';
 import { initProject, initStarter } from './init.js';
-import { docsSearch } from './docs-search.js';
+import { docsGet, docsSearch } from './docs-search.js';
 import { envPull } from './env-pull.js';
 import { apiCommand, listProjects } from './machine-api.js';
 import { openApiCall, openApiDescribe, openApiList, openApiRefresh } from './openapi.js';
@@ -358,7 +358,9 @@ export async function runCli(args: string[]): Promise<void> {
       printMcpConfig(options.client);
     });
 
-  const docs = program.command('docs').description('search and explore Wacht docs');
+  const docs = program
+    .command('docs')
+    .description('search and read Wacht docs from the terminal — no MCP required');
   docs
     .command('search <query...>')
     .description('full-text search Wacht docs and print matching pages')
@@ -369,6 +371,18 @@ export async function runCli(args: string[]): Promise<void> {
       await docsSearch(context(program), {
         query: queryParts.join(' '),
         limit: options.limit,
+        baseUrl: options.baseUrl,
+        json: options.json,
+      });
+    });
+  docs
+    .command('get <path>')
+    .description('print the full Markdown of a Wacht docs page (e.g. /sdks/nextjs/middleware)')
+    .option('--base-url <url>', 'docs base URL (default: https://wacht.dev/docs, or $WACHT_DOCS_URL)')
+    .option('--json', 'emit JSON ({ path, url, markdown }) instead of raw Markdown')
+    .action(async (docPath: string, options: { baseUrl?: string; json?: boolean }) => {
+      await docsGet(context(program), {
+        path: docPath,
         baseUrl: options.baseUrl,
         json: options.json,
       });
